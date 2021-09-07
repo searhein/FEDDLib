@@ -11,69 +11,32 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 
-/*!
- main of unsteadyTPM problem
- 
- @brief unsteadyTPM main
- @author Christian Hochmuth
- @version 1.0
- @copyright CH
- */
-
-void zeroDirichlet(double* x, double* res, double t, const double* parameters){
-    
-    res[0] = 0.;
-    
-    return;
-}
-
-void zeroDirichlet2D(double* x, double* res, double t, const double* parameters){
-    
-    res[0] = 0.;
-    res[1] = 0.;
-    
-    return;
-}
-
-void zeroDirichlet3D(double* x, double* res, double t, const double* parameters){
-    
-    res[0] = 0.;
-    res[1] = 0.;
-    res[2] = 0.;
-    
-    return;
-}
-
-
 void lineLoad2D(double* x, double* res, double* parameters){
     // parameters[0] is the time, not needed here
     res[0] = 0.;
     res[1] = 0.;
-
     if (parameters[2] == 4. /*line at the top*/){
         if (parameters[0]<parameters[1]/*max time ramp*/)
             res[1] = - 1. * parameters[0] / parameters[1];
         else
             res[1] = - 1.;
-    }
-    
+    }    
     return;
 }
 
-void lineLoad2DMini(double* x, double* res, double* parameters){
-    // parameters[0] is the time, not needed here
+void zeroDirichlet(double* x, double* res, double t, const double* parameters)
+{    
+    res[0] = 0.0;
+    return;
+}
+
+void zeroDirichlet2D(double* x, double* res, double t, const double* parameters)
+{
     res[0] = 0.;
-    res[1] = 0.;
-
-    if (parameters[2] == 3./*line at the right*/){
-        if (parameters[0]<parameters[1]/*max time ramp*/){
-            res[0] = - 10. * parameters[0] / parameters[1];
-        }
-        else
-            res[0] = - 10.;
-    }
+    res[1] = 0.;    
     return;
 }
+
 
 typedef unsigned UN;
 typedef default_sc SC;
@@ -103,23 +66,28 @@ int main(int argc, char *argv[]) {
     // Command Line Parameters
     Teuchos::CommandLineProcessor myCLP;
     
-    string xmlProblemFile = "parametersProblem.xml";
-    myCLP.setOption("problemfile",&xmlProblemFile,".xml file with Inputparameters.");
-    string xmlPrecFile = "parametersPrec.xml";
-    myCLP.setOption("precfile",&xmlPrecFile,".xml file with Inputparameters.");
-    string xmlSolverFile = "parametersSolver.xml";
-    myCLP.setOption("solverfile",&xmlSolverFile,".xml file with Inputparameters.");
+    string xmlProblemFile   = "parametersProblem.xml";
+    string xmlPrecFile      = "parametersPrec.xml";
+    string xmlSolverFile    = "parametersSolver.xml";
+    string xmlTekoPrecFile  = "parametersTeko.xml";
 
-    string xmlTekoPrecFile = "parametersTeko.xml";
-    myCLP.setOption("tekoprecfile",&xmlTekoPrecFile,".xml file with Inputparameters.");
+    myCLP.setOption("problemfile"   ,&xmlProblemFile    ,".xml file with Inputparameters.");
+    myCLP.setOption("precfile"      ,&xmlPrecFile       ,".xml file with Inputparameters.");
+    myCLP.setOption("solverfile"    ,&xmlSolverFile     ,".xml file with Inputparameters.");
+    myCLP.setOption("tekoprecfile"  ,&xmlTekoPrecFile   ,".xml file with Inputparameters.");
     
     myCLP.recogniseAllOptions(true);
     myCLP.throwExceptions(false);
-    Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn = myCLP.parse(argc,argv);
+
+    Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn = myCLP.parse(argc, argv);
+
     if(parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
         MPI_Finalize();
         return 0;
     }
+
+    // finalized reading command line input
+
     {
         ParameterListPtr_Type parameterListProblem = Teuchos::getParametersFromXmlFile(xmlProblemFile);
 
@@ -145,11 +113,24 @@ int main(int argc, char *argv[]) {
             parameterListAll->setParameters(*parameterListPrec);
         
         parameterListAll->setParameters(*parameterListSolver);
+
+        int ace = parameterListProblem->sublist("Parameter").get("Ace", 2);
+        if (verbose) cout << "Reading Ace: " << ace << std::endl;
+
+        ace = parameterListAll->sublist("Parameter").get("Ace", 2);
+        if (verbose) cout << "Reading Ace: " << ace << std::endl;
+
+        //MPI_Finalize();
+        //return 0;
+
+
+        // finalize reading xml files
         
-        int minNumberSubdomains;
-        if (!meshType.compare("structured") || !meshType.compare("unstructured_struct") || !meshType.compare("structuredMiniTest")) {
-            minNumberSubdomains = 1;
-        }
+        // int minNumberSubdomains;
+        // if (!meshType.compare("structured") || !meshType.compare("unstructured_struct") || !meshType.compare("structuredMiniTest")) {
+        //     minNumberSubdomains = 1;
+        // }
+        int minNumberSubdomains = 1;
         
         int size = comm->getSize();
         int numProcsCoarseSolve = parameterListProblem->sublist("General").get("Mpi Ranks Coarse",0);
@@ -159,8 +140,103 @@ int main(int argc, char *argv[]) {
         Teuchos::RCP<Teuchos::Time> totalTime(Teuchos::TimeMonitor::getNewCounter("main: Total Time"));
         Teuchos::RCP<Teuchos::Time> buildMesh(Teuchos::TimeMonitor::getNewCounter("main: Build Mesh"));
         Teuchos::RCP<Teuchos::Time> solveTime(Teuchos::TimeMonitor::getNewCounter("main: Solve problem time"));
+
         DomainPtr_Type domainPressure;
         DomainPtr_Type domainVelocity;
+
+        // reading unstructured mesh 
+        if (meshType!="unstructured")
+        {
+            MPI_Finalize();
+            if (verbose) cout << "Error! Only unstructured supported!" << std::endl;
+            return 0;
+        }
+
+        Teuchos::TimeMonitor totalTimeMonitor(*totalTime);
+        {
+
+        Teuchos::TimeMonitor buildMeshMonitor(*buildMesh);
+        {
+
+            domainPressure.reset( new Domain<SC,LO,GO,NO>( comm, dim ) );
+            domainVelocity.reset( new Domain<SC,LO,GO,NO>( comm, dim ) );
+                        
+            MeshPartitioner_Type::DomainPtrArray_Type domainP1Array(1);
+            domainP1Array[0] = domainPressure;
+                        
+            ParameterListPtr_Type pListPartitioner = sublist( parameterListProblem, "Mesh Partitioner" );
+            MeshPartitioner<SC,LO,GO,NO> partitionerP1 ( domainP1Array, pListPartitioner, "P1", dim );
+                        
+            partitionerP1.readAndPartition();
+            domainVelocity->buildP2ofP1Domain( domainPressure );
+
+            domainPressure->getMesh()->setElementFlags("TPM_square");
+            domainVelocity->getMesh()->setElementFlags("TPM_square");
+
+        }
+
+        // boundary conditions
+        std::vector<double> parameter_vec(1, parameterListProblem->sublist("Parameter").get("MaxVelocity",1.));
+
+        Teuchos::RCP<BCBuilder<SC,LO,GO,NO> > bcFactory( new BCBuilder<SC,LO,GO,NO>( ) );
+        
+        bcFactory->addBC(zeroDirichlet2D, 1, 0, domainVelocity, "Dirichlet", dim);
+        bcFactory->addBC(zeroDirichlet2D, 2, 0, domainVelocity, "Dirichlet", dim);
+        bcFactory->addBC(zeroDirichlet2D, 3, 0, domainVelocity, "Dirichlet", dim);
+        bcFactory->addBC(zeroDirichlet, 5, 1, domainPressure, "Dirichlet", 1);
+
+        TPM<SC,LO,GO,NO> tpm( domainVelocity, discVelocity, domainPressure, discPressure, parameterListAll );
+        
+        // add neumann boundary
+        //tpm.addRhsFunction( lineLoad2D );
+
+        domainVelocity->info();
+        domainPressure->info();
+        
+        // zum unterbrechen eine zahl einlesen
+        int z;
+        std::cin >> z;
+
+        // problem solution procedure
+        {
+            Teuchos::TimeMonitor solveTimeMonitor(*solveTime);
+            
+            double finalTimeRamp = parameterListAll->sublist("Timestepping Parameter").get("Final time ramp",1.);
+            
+            tpm.addParemeterRhs( finalTimeRamp );
+            
+            tpm.addBoundaries(bcFactory);
+            
+            tpm.initializeProblem();
+            
+            tpm.assemble("FirstAssemble");
+
+            // ######################
+            // Zeitintegration
+            // ######################
+            
+            DAESolverInTime<SC,LO,GO,NO> daeTimeSolver(parameterListAll, comm);
+            
+            // Only one block for structural problem
+            SmallMatrix<int> defTS(2);//doesnt matter, we use the fully assemble TPM problem from AceGen Code
+            
+            // Uebergebe auf welchen Bloecken die Zeitintegration durchgefuehrt werden soll
+            // und Uebergabe der parameterList, wo die Parameter fuer die Zeitintegration drin stehen
+            daeTimeSolver.defineTimeStepping(defTS);
+            
+            // Uebergebe das (nicht) lineare Problem
+            daeTimeSolver.setProblem(tpm);
+            
+            // Setup fuer die Zeitintegration, wie z.B. Aufstellen der Massematrizen auf den Zeilen, welche in
+            // defTS definiert worden sind.
+            daeTimeSolver.setupTimeStepping();
+            
+            // Fuehre die komplette Zeitintegration + Newton + Loesen + Exporter durch
+            daeTimeSolver.advanceInTime();
+
+        }
+
+        /*
         {
             Teuchos::TimeMonitor totalTimeMonitor(*totalTime);
             {
@@ -168,7 +244,7 @@ int main(int argc, char *argv[]) {
                 if (verbose) {
                     cout << "-- Building Mesh ..." << flush;
                 }
-                
+                //    meshType=="structured"
                 if (!meshType.compare("structured")) {
                     TEUCHOS_TEST_FOR_EXCEPTION( size%minNumberSubdomains != 0 , std::logic_error, "Wrong number of processors for structured mesh.");
                     if (dim == 2) {
@@ -233,103 +309,60 @@ int main(int argc, char *argv[]) {
             
             std::vector<double> parameter_vec(1, parameterListProblem->sublist("Parameter").get("MaxVelocity",1.));
             
+            */
             // ####################
-            Teuchos::RCP<BCBuilder<SC,LO,GO,NO> > bcFactory( new BCBuilder<SC,LO,GO,NO>( ) );
+//             Teuchos::RCP<BCBuilder<SC,LO,GO,NO> > bcFactory( new BCBuilder<SC,LO,GO,NO>( ) );
             
-            if (dim==2 && meshType == "unstructured") {
-                /*
-                  --4--6--5--
-                 |          |
-                 |          |
-                 2          3
-                 |          |
-                 |          |
-                  ----1-----
-                 */
+//             if (dim==2 && meshType == "unstructured") {
+//                 /*
+//                   --4--6--5--
+//                  |          |
+//                  |          |
+//                  2          3
+//                  |          |
+//                  |          |
+//                   ----1-----
+//                  */
                 
                 
-                bcFactory->addBC(zeroDirichlet2D, 1, 0, domainVelocity, "Dirichlet", dim);
-                bcFactory->addBC(zeroDirichlet2D, 2, 0, domainVelocity, "Dirichlet", dim);
-                bcFactory->addBC(zeroDirichlet2D, 3, 0, domainVelocity, "Dirichlet", dim);
-//                bcFactory->addBC(dummyFunc, 4, 0, domainVelocity, "Neumann", dim);
-                bcFactory->addBC(zeroDirichlet, 5, 1, domainPressure, "Dirichlet", 1);//part of top boundary
-//                bcFactory->addBC(zeroDirichlet, 1, 1, domainPressure, "Dirichlet", 1);//part of top boundary
-//                bcFactory->addBC(zeroDirichlet, 2, 1, domainPressure, "Dirichlet", 1);//part of top boundary
-//                bcFactory->addBC(zeroDirichlet, 3, 1, domainPressure, "Dirichlet", 1);//part of top boundary
-//                bcFactory->addBC(zeroDirichlet, 10, 1, domainPressure, "Dirichlet", 1);//part of top boundary
-            }
-            else if(dim==2 && meshType == "structuredMiniTest"){
-                std::cout << "using structuredMiniTest BC" << std::endl;
-                bcFactory->addBC(zeroDirichlet2D, 1, 0, domainVelocity, "Dirichlet", dim);
-                bcFactory->addBC(zeroDirichlet2D, 2, 0, domainVelocity, "Dirichlet_Y", dim);
-                bcFactory->addBC(zeroDirichlet2D, 4, 0, domainVelocity, "Dirichlet_Y", dim);
-                bcFactory->addBC(zeroDirichlet2D, 3, 0, domainVelocity, "Dirichlet_X", dim);
-//                bcFactory->addBC(zeroDirichlet, 1, 1, domainPressure, "Dirichlet", 1);
-                bcFactory->addBC(zeroDirichlet, 2, 1, domainPressure, "Dirichlet", 1);
-            }
+//                 bcFactory->addBC(zeroDirichlet2D, 1, 0, domainVelocity, "Dirichlet", dim);
+//                 bcFactory->addBC(zeroDirichlet2D, 2, 0, domainVelocity, "Dirichlet", dim);
+//                 bcFactory->addBC(zeroDirichlet2D, 3, 0, domainVelocity, "Dirichlet", dim);
+// //                bcFactory->addBC(dummyFunc, 4, 0, domainVelocity, "Neumann", dim);
+//                 bcFactory->addBC(zeroDirichlet, 5, 1, domainPressure, "Dirichlet", 1);//part of top boundary
+// //                bcFactory->addBC(zeroDirichlet, 1, 1, domainPressure, "Dirichlet", 1);//part of top boundary
+// //                bcFactory->addBC(zeroDirichlet, 2, 1, domainPressure, "Dirichlet", 1);//part of top boundary
+// //                bcFactory->addBC(zeroDirichlet, 3, 1, domainPressure, "Dirichlet", 1);//part of top boundary
+// //                bcFactory->addBC(zeroDirichlet, 10, 1, domainPressure, "Dirichlet", 1);//part of top boundary
+//             }
+//             else if(dim==2 && meshType == "structuredMiniTest"){
+//                 std::cout << "using structuredMiniTest BC" << std::endl;
+//                 bcFactory->addBC(zeroDirichlet2D, 1, 0, domainVelocity, "Dirichlet", dim);
+//                 bcFactory->addBC(zeroDirichlet2D, 2, 0, domainVelocity, "Dirichlet_Y", dim);
+//                 bcFactory->addBC(zeroDirichlet2D, 4, 0, domainVelocity, "Dirichlet_Y", dim);
+//                 bcFactory->addBC(zeroDirichlet2D, 3, 0, domainVelocity, "Dirichlet_X", dim);
+// //                bcFactory->addBC(zeroDirichlet, 1, 1, domainPressure, "Dirichlet", 1);
+//                 bcFactory->addBC(zeroDirichlet, 2, 1, domainPressure, "Dirichlet", 1);
+//             }
             
-            else if(dim==3){
+//             else if(dim==3){
                 
-                /*
-                 --4--6--5--
-                |          |
-                |          |
-                1          1
-                |          |
-                |          |
-                 ----1-----
-                */
+//                 /*
+//                  --4--6--5--
+//                 |          |
+//                 |          |
+//                 1          1
+//                 |          |
+//                 |          |
+//                  ----1-----
+//                 */
                 
-                TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "No BC implemented in 3D yet.");
-            }
+//                 TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "No BC implemented in 3D yet.");
+//             }
             
-            TPM<SC,LO,GO,NO> tpm( domainVelocity, discVelocity, domainPressure, discPressure, parameterListAll );
             
-            domainVelocity->info();
-            domainPressure->info();
 
-            {
-                Teuchos::TimeMonitor solveTimeMonitor(*solveTime);
-                
-                if(meshType == "structuredMiniTest")
-                    tpm.addRhsFunction( lineLoad2DMini );
-                else
-                    tpm.addRhsFunction( lineLoad2D );
-                
-                double finalTimeRamp = parameterListAll->sublist("Timestepping Parameter").get("Final time ramp",1.);
-                double degree = 0;
-                
-                tpm.addParemeterRhs( finalTimeRamp );
-                tpm.addParemeterRhs( degree );
-                
-                tpm.addBoundaries(bcFactory);
-                
-                tpm.initializeProblem();
-                
-                tpm.assemble("FirstAssemble");
-                // ######################
-                // Zeitintegration
-                // ######################
-                DAESolverInTime<SC,LO,GO,NO> daeTimeSolver(parameterListAll, comm);
-                
-                // Only one block for structural problem
-                SmallMatrix<int> defTS(2);//doesnt matter, we use the fully assemble TPM problem from AceGen Code
-                
-                // Uebergebe auf welchen Bloecken die Zeitintegration durchgefuehrt werden soll
-                // und Uebergabe der parameterList, wo die Parameter fuer die Zeitintegration drin stehen
-                daeTimeSolver.defineTimeStepping(defTS);
-                
-                // Uebergebe das (nicht) lineare Problem
-                daeTimeSolver.setProblem(tpm);
-                
-                // Setup fuer die Zeitintegration, wie z.B. Aufstellen der Massematrizen auf den Zeilen, welche in
-                // defTS definiert worden sind.
-                daeTimeSolver.setupTimeStepping();
-                
-                // Fuehre die komplette Zeitintegration + Newton + Loesen + Exporter durch
-                daeTimeSolver.advanceInTime();
-
-            }
+            
         }
     }
     Teuchos::TimeMonitor::report(cout);
