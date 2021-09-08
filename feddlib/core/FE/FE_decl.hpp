@@ -111,6 +111,22 @@ class FE {
                             MultiVectorPtr_Type p_repeatedTime=Teuchos::null,
                            bool update=true,
                            bool updateHistory=true);
+
+    void assemblyAceGenACE( MatrixPtr_Type &A00,
+                            MatrixPtr_Type &A01,
+                            MatrixPtr_Type &A10,
+                            MatrixPtr_Type &A11,
+                            MultiVectorPtr_Type &F0,
+                            MultiVectorPtr_Type &F1,
+                            MapPtr_Type &mapRepeated1,
+                            MapPtr_Type &mapRepeated2,
+                            ParameterListPtr_Type parameterList,
+                            MultiVectorPtr_Type u_repeatedNewton=Teuchos::null,
+                            MultiVectorPtr_Type p_repeatedNewton=Teuchos::null,
+                            MultiVectorPtr_Type u_repeatedTime=Teuchos::null,
+                            MultiVectorPtr_Type p_repeatedTime=Teuchos::null,
+                           bool update=true,
+                           bool updateHistory=true);
     
     
     void addFE(DomainConstPtr_Type domain);

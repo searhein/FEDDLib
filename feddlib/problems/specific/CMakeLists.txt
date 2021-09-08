@@ -38,6 +38,9 @@ SET(problems_specific_HEADERS
     specific/FSI_decl.hpp
     specific/FSI_def.hpp
     specific/FSI.hpp
+    specific/ACE_decl.hpp
+    specific/ACE_def.hpp
+    specific/ACE.hpp
 CACHE INTERNAL "")
 
 SET(problems_specific_SOURCES
@@ -54,6 +57,7 @@ SET(problems_specific_SOURCES
 	specific/Stokes.cpp
     specific/TPM.cpp
     specific/FSI.cpp
+    specific/ACE.cpp
 CACHE INTERNAL "")
 
 
