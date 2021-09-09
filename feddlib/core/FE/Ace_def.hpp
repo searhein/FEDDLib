@@ -1,3 +1,5 @@
+#include "feddlib/core/FE/ace_layer/ace_layer.hpp"
+
 template <class SC, class LO, class GO, class NO>
 void FE<SC,LO,GO,NO>::assemblyAceGenACE(    MatrixPtr_Type &A00,
                                             MatrixPtr_Type &A01,
@@ -8,13 +10,21 @@ void FE<SC,LO,GO,NO>::assemblyAceGenACE(    MatrixPtr_Type &A00,
                                             MapPtr_Type &mapRepeated1,
                                             MapPtr_Type &mapRepeated2,
                                             ParameterListPtr_Type parameterList,
+                                            Teuchos::RCP<AceGenElement> AceElmt,
                                             MultiVectorPtr_Type u_repeatedNewton,
                                             MultiVectorPtr_Type p_repeatedNewton,
                                             MultiVectorPtr_Type u_repeatedTime,
                                             MultiVectorPtr_Type p_repeatedTime,
                                             bool update,
-                                            bool updateHistory)
+                                            bool updateHistory
+                                            )
 {
+    
+    // testen des elements: das hat funktioniert !!
+    // int nonodes = AceElmt -> get_NoNodes();
+    // int nodofs = AceElmt ->  get_NoDofs();
+    // std::cout << "ELEMENTNODES: " << nonodes << std::endl;
+    // std::cout << "ELEMENTDOFS : " << nodofs << std::endl;
     
 
     std::string tpmType = parameterList->sublist("Parameter").get("TPM Type","Biot");

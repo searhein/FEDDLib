@@ -11,10 +11,11 @@ void ZeroDirichlet(double* x, double* res, double t, double* parameters){
 }
     
 template<class SC,class LO,class GO,class NO>
-ACE<SC,LO,GO,NO>::ACE(const DomainConstPtr_Type &domainVelocity, std::string FETypeVelocity, const DomainConstPtr_Type &domainPressure, std::string FETypePressure, ParameterListPtr_Type parameterList):
+ACE<SC,LO,GO,NO>::ACE(const DomainConstPtr_Type &domainVelocity, std::string FETypeVelocity, const DomainConstPtr_Type &domainPressure, std::string FETypePressure, ParameterListPtr_Type parameterList, Teuchos::RCP<AceGenElement> AceElmt_):
 Problem<SC,LO,GO,NO>(parameterList, domainVelocity->getComm())
+,AceElmt(AceElmt_)
+//,TheElement(new AceGenElement("/Users/cnisters/Documents/nisters/acegen/projects/laplace_auf_kreis/laplace_galerkin_2017_01_23.c"))
 {
-
     this->addVariable( domainVelocity , FETypeVelocity , "u" , domainVelocity->getDimension());
     this->addVariable( domainPressure , FETypePressure , "p" , 1);
     this->dim_ = this->getDomain(0)->getDimension();
@@ -101,12 +102,14 @@ void ACE<SC,LO,GO,NO>::assemble( std::string type ) const{
                                             mapRepeated1,
                                             mapRepeated2,
                                             this->parameterList_,
+                                            this->AceElmt,
                                             u_repNewton_,
                                             p_repNewton_,
                                             u_repTime_,
                                             p_repTime_,
                                             update,
-                                            updateHistory);
+                                            updateHistory
+                                            );
 
         if (update) {
             this->system_->addBlock( A00, 0, 0 );

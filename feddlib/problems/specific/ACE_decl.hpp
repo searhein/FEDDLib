@@ -1,7 +1,7 @@
 #ifndef ACE_decl_hpp
 #define ACE_decl_hpp
 #include "feddlib/problems/abstract/Problem.hpp"
-
+#include "/Users/cnisters/source/feddlib_mech/feddlib/core/FE/ace_layer/ace_layer.hpp"
 
 namespace FEDD {
 template <class SC = default_sc, class LO = default_lo, class GO = default_go, class NO = default_no>
@@ -26,8 +26,7 @@ public:
     typedef typename Problem_Type::DomainConstPtr_Type DomainConstPtr_Type;
     typedef typename Problem_Type::CommConstPtr_Type CommConstPtr_Type;
     
-    ACE( const DomainConstPtr_Type &domainVelocity, std::string FETypeVelocity, const DomainConstPtr_Type &domainPressure, std::string FETypePressure, ParameterListPtr_Type parameterList );
-    
+    ACE( const DomainConstPtr_Type &domainVelocity, std::string FETypeVelocity, const DomainConstPtr_Type &domainPressure, std::string FETypePressure, ParameterListPtr_Type parameterList, Teuchos::RCP<AceGenElement> AceElmt);
     ~ACE();
     
     virtual void info();
@@ -46,6 +45,10 @@ public:
     mutable MultiVectorPtr_Type u_repTime_;
     mutable MultiVectorPtr_Type p_repTime_;
     /*####################*/
+
+  public:
+  Teuchos::RCP<AceGenElement> AceElmt;
+  //AceGenElement* TheElement;
 
 };
 }

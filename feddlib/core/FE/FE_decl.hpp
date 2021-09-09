@@ -9,6 +9,7 @@
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include "Domain.hpp"
 #include "sms.hpp"
+#include "/Users/cnisters/source/feddlib_mech/feddlib/core/FE/ace_layer/ace_layer.hpp"
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_BLAS.hpp>
@@ -121,6 +122,7 @@ class FE {
                             MapPtr_Type &mapRepeated1,
                             MapPtr_Type &mapRepeated2,
                             ParameterListPtr_Type parameterList,
+                            Teuchos::RCP<AceGenElement> AceElmt,
                             MultiVectorPtr_Type u_repeatedNewton=Teuchos::null,
                             MultiVectorPtr_Type p_repeatedNewton=Teuchos::null,
                             MultiVectorPtr_Type u_repeatedTime=Teuchos::null,
