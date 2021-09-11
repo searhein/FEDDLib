@@ -1,5 +1,6 @@
 #pragma once
-// Hard Code path otherwise configured by cmake
+// here are some hardcoded paths
+// they need to be absolue paths 
 #define SMSHeader "/Users/cnisters/source/feddlib_mech/feddlib/core/FE/ace_layer/"
 #define SMSUtil "/Users/cnisters/source/feddlib_mech/feddlib/core/FE/ace_layer/SMSUtility.c"
 #define SMSCCompiler "gcc"

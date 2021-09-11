@@ -14,7 +14,6 @@ template<class SC,class LO,class GO,class NO>
 ACE<SC,LO,GO,NO>::ACE(const DomainConstPtr_Type &domainVelocity, std::string FETypeVelocity, const DomainConstPtr_Type &domainPressure, std::string FETypePressure, ParameterListPtr_Type parameterList, Teuchos::RCP<AceGenElement> AceElmt_):
 Problem<SC,LO,GO,NO>(parameterList, domainVelocity->getComm())
 ,AceElmt(AceElmt_)
-//,TheElement(new AceGenElement("/Users/cnisters/Documents/nisters/acegen/projects/laplace_auf_kreis/laplace_galerkin_2017_01_23.c"))
 {
     this->addVariable( domainVelocity , FETypeVelocity , "u" , domainVelocity->getDimension());
     this->addVariable( domainPressure , FETypePressure , "p" , 1);
@@ -93,6 +92,7 @@ void ACE<SC,LO,GO,NO>::assemble( std::string type ) const{
         bool update(type == "FirstAssemble" || type == "Assemble" || type == "AssembleAndUpdate");
         bool updateHistory(type == "OnlyUpdate" || type == "AssembleAndUpdate"); //for AceGen History variables
 
+        // The new ACE probelm calls the new assemblyAceGenACE routine with the AceGenElement as an argument.
         this->feFactory_->assemblyAceGenACE(A00,
                                             A01,
                                             A10,

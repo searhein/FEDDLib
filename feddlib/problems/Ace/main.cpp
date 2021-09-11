@@ -1,3 +1,5 @@
+// The new Ace problem (fork of unsteadyTPM).
+
 #include "feddlib/core/FEDDCore.hpp"
 #include "feddlib/core/FE/Domain.hpp"
 #include "feddlib/core/Mesh/MeshPartitioner.hpp"
@@ -5,14 +7,13 @@
 #include "feddlib/core/General/ExporterParaView.hpp"
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include "feddlib/problems/Solver/DAESolverInTime.hpp"
-//#include "feddlib/problems/specific/TPM.hpp"
 #include "feddlib/problems/specific/ACE.hpp"
 
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
 
-#include "/Users/cnisters/source/feddlib_mech/feddlib/core/FE/ace_layer/ace_layer.hpp"
+#include "feddlib/core/FE/ace_layer/ace_layer.hpp"
 
 void lineLoad2D(double* x, double* res, double* parameters){
     // parameters[0] is the time, not needed here
@@ -65,6 +66,8 @@ int main(int argc, char *argv[]) {
         cout << "##############################################" <<endl;
     }
 
+    // Here the element is compiled and linked so that the
+    // AceGenElement now has pointers to the element subr
     std::string elmt_test("/Users/cnisters/Documents/nisters/acegen/projects/laplace_auf_kreis/laplace_galerkin_2017_01_23.c");
     //AceGenElement AceElmt(elmt_test);
     //AceElmt.status();
@@ -192,6 +195,7 @@ int main(int argc, char *argv[]) {
         bcFactory->addBC(zeroDirichlet2D, 3, 0, domainVelocity, "Dirichlet", dim);
         bcFactory->addBC(zeroDirichlet, 5, 1, domainPressure, "Dirichlet", 1);
 
+        // Here we use the new Ace -> Specific Problem
         ACE<SC,LO,GO,NO> tpm( domainVelocity, discVelocity, domainPressure, discPressure, parameterListAll, AceElmt);
         
         // add neumann boundary

@@ -1,7 +1,14 @@
 #ifndef ACE_decl_hpp
 #define ACE_decl_hpp
 #include "feddlib/problems/abstract/Problem.hpp"
-#include "/Users/cnisters/source/feddlib_mech/feddlib/core/FE/ace_layer/ace_layer.hpp"
+#include "feddlib/core/FE/ace_layer/ace_layer.hpp"
+
+/*
+The Ace -> Specific Problem.
+It holds a pointer to the AceGenElement which is initialized by the constructor.
+For the future, this class is supposed to handle a variable number of "DomainConstPtr_Type" (fields)
+and also loses its restriction to a block matrix.
+*/
 
 namespace FEDD {
 template <class SC = default_sc, class LO = default_lo, class GO = default_go, class NO = default_no>
@@ -47,8 +54,7 @@ public:
     /*####################*/
 
   public:
-  Teuchos::RCP<AceGenElement> AceElmt;
-  //AceGenElement* TheElement;
+    Teuchos::RCP<AceGenElement> AceElmt;
 
 };
 }

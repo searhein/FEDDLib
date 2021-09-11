@@ -1,3 +1,7 @@
+/*
+The new assembly routine that will call the AceGenElement
+*/
+
 #include "feddlib/core/FE/ace_layer/ace_layer.hpp"
 
 template <class SC, class LO, class GO, class NO>
