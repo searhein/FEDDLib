@@ -72,6 +72,7 @@ TRIBITS_ADD_TEST_DIRECTORIES(tests)
 #
 # Do standard postprocessing
 #
+ADD_SUBDIRECTORY(Ace)
 
 TRIBITS_PACKAGE_POSTPROCESS()
 

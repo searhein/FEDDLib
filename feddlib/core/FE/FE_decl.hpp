@@ -9,6 +9,7 @@
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include "Domain.hpp"
 #include "sms.hpp"
+#include "feddlib/core/FE/ace_layer/ace_layer.hpp"
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_BLAS.hpp>
@@ -25,6 +26,7 @@
  */
 
 namespace FEDD {
+// in the future this part is to be replaced or extended
 class DataElement {
     public:
         DataElement();
@@ -105,6 +107,24 @@ class FE {
                             MapPtr_Type &mapRepeated1,
                             MapPtr_Type &mapRepeated2,
                             ParameterListPtr_Type parameterList,
+                            MultiVectorPtr_Type u_repeatedNewton=Teuchos::null,
+                            MultiVectorPtr_Type p_repeatedNewton=Teuchos::null,
+                            MultiVectorPtr_Type u_repeatedTime=Teuchos::null,
+                            MultiVectorPtr_Type p_repeatedTime=Teuchos::null,
+                           bool update=true,
+                           bool updateHistory=true);
+
+    // delcaration of the new assembly, which also takes the AceGenElement
+    void assemblyAceGenACE( MatrixPtr_Type &A00,
+                            MatrixPtr_Type &A01,
+                            MatrixPtr_Type &A10,
+                            MatrixPtr_Type &A11,
+                            MultiVectorPtr_Type &F0,
+                            MultiVectorPtr_Type &F1,
+                            MapPtr_Type &mapRepeated1,
+                            MapPtr_Type &mapRepeated2,
+                            ParameterListPtr_Type parameterList,
+                            Teuchos::RCP<AceGenElement> AceElmt,
                             MultiVectorPtr_Type u_repeatedNewton=Teuchos::null,
                             MultiVectorPtr_Type p_repeatedNewton=Teuchos::null,
                             MultiVectorPtr_Type u_repeatedTime=Teuchos::null,

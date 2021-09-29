@@ -18,6 +18,9 @@ int MMAInitialisationCode[]={
 
 
 namespace FEDD {
+
+#include "Ace_def.hpp"; // here comes the implementation of the ace routine! for clarity stored in another file
+
 DataElement::DataElement():
 ht_(1,0.),
 hp_(1,0.)
