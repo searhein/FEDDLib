@@ -22,3 +22,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(data_bc_2dSquare
 	DEST_FILES square.mesh
 	EXEDEPS neumannBC
 )
+
+IF (HAVE_pybind11)
+
+pybind11_add_module(example example.cpp)
+
+ENDIF (HAVE_pybind11)
