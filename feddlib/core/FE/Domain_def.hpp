@@ -398,6 +398,27 @@ void Domain<SC,LO,GO,NO>::setMesh(MeshUnstrPtr_Type meshUnstr){
 }
 
 template <class SC, class LO, class GO, class NO>
+void Domain<SC,LO,GO,NO>::exportMesh(bool exportEdges, bool exportSurfaces, string exportMesh){ 
+
+    MeshUnstrPtr_Type meshUnstructured = Teuchos::rcp_dynamic_cast<MeshUnstr_Type>( mesh_ );
+
+    meshUnstructured->exportMesh(this->getMapUnique() , this->getMapRepeated(), exportEdges, exportSurfaces, exportMesh);
+}
+
+template <class SC, class LO, class GO, class NO>
+void Domain<SC,LO,GO,NO>::preProcessMesh(bool correctSurfaceNormals, bool correctElementDirection){ 
+
+    if(correctSurfaceNormals)
+        mesh_->correctNormalDirections();
+
+    if(correctElementDirection)
+        mesh_->correctElementOrientation();
+
+
+}
+
+
+template <class SC, class LO, class GO, class NO>
 UN Domain<SC,LO,GO,NO>::getDimension() const{
 
     return dim_;
@@ -977,7 +998,55 @@ typename Domain<SC,LO,GO,NO>::MultiVectorPtr_Type Domain<SC,LO,GO,NO>::getNodeLi
     }
     return nodeList;
 }
-    
+
+template <class SC, class LO, class GO, class NO>
+void Domain<SC, LO, GO, NO>::exportNodeFlags(string name)
+{
+        Teuchos::RCP<ExporterParaView<SC,LO,GO,NO> > exPara(new ExporterParaView<SC,LO,GO,NO>());
+
+        Teuchos::RCP<MultiVector<SC,LO,GO,NO> > exportSolution(new MultiVector<SC,LO,GO,NO>(this->getMapUnique()));
+        vec_int_ptr_Type BCFlags = this->getBCFlagUnique(); // Unique flags at points
+
+        Teuchos::ArrayRCP< SC > entries  = exportSolution->getDataNonConst(0);
+        for(int i=0; i< entries.size(); i++){
+            entries[i] = BCFlags->at(i);
+        }
+
+        Teuchos::RCP<const MultiVector<SC,LO,GO,NO> > exportSolutionConst = exportSolution;
+
+        exPara->setup("Mesh_Node_Flags_"+name,this->getMesh(), this->FEType_);
+
+        exPara->addVariable(exportSolutionConst, "Flags", "Scalar", 1,this->getMapUnique()); 
+        exPara->save(0.0);
+
+        exPara->closeExporter();
+}   
+
+template <class SC, class LO, class GO, class NO>
+void Domain<SC, LO, GO, NO>::exportElementFlags(string name)
+{
+        Teuchos::RCP<ExporterParaView<SC,LO,GO,NO> > exPara(new ExporterParaView<SC,LO,GO,NO>());
+
+        Teuchos::RCP<MultiVector<SC,LO,GO,NO> > exportSolution(new MultiVector<SC,LO,GO,NO>(this->getElementMap()));
+
+        Teuchos::ArrayRCP< SC > entries  = exportSolution->getDataNonConst(0);
+        ElementsPtr_Type elements = this->getElementsC(); // element list
+
+        for(int i=0; i< entries.size(); i++){
+            entries[i] = elements->getElement(i).getFlag(); // element flags
+        }
+
+        Teuchos::RCP<const MultiVector<SC,LO,GO,NO> > exportSolutionConst = exportSolution;
+
+        exPara->setup("Mesh_Element_Flags_"+name,this->getMesh(), "P0");
+
+        exPara->addVariable(exportSolutionConst, "Flags", "Scalar", 1,this->getElementMap(), this->getElementMap());
+
+        exPara->save(0.0);
+
+        exPara->closeExporter();
+
+}   
     
 }
 #endif

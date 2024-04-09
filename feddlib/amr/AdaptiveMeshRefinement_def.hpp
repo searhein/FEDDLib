@@ -323,6 +323,45 @@ typename AdaptiveMeshRefinement<SC,LO,GO,NO>::DomainPtr_Type AdaptiveMeshRefinem
 
 }
 
+template <class SC, class LO, class GO, class NO>
+typename AdaptiveMeshRefinement<SC,LO,GO,NO>::DomainPtr_Type AdaptiveMeshRefinement<SC,LO,GO,NO>:: refineFlag(DomainPtr_Type domainP1, int level ,int flag){
+
+	DomainPtr_Type domainRefined(new Domain<SC,LO,GO,NO>( domainP1->getComm() , dim_ ));
+
+	inputMeshP1_ = Teuchos::rcp_dynamic_cast<MeshUnstr_Type>( domainP1->getMesh() , true);
+	inputMeshP1_->FEType_ = domainP1->getFEType();
+
+	inputMeshP1_->assignEdgeFlags();
+		
+	MeshUnstrPtr_Type outputMesh(new MeshUnstr_Type(domainP1->getComm(),  inputMeshP1_->volumeID_));
+
+	domainRefined->initWithDomain(domainP1);
+
+	inputMeshP1_ = Teuchos::rcp_dynamic_cast<MeshUnstr_Type>( domainP1->getMesh() , true);
+	inputMeshP1_->FEType_ = domainP1->getFEType();
+
+	// Error Estimation object
+    ErrorEstimation<SC,LO,GO,NO> errorEstimator (dim_, problemType_ , writeMeshQuality_);
+
+	// Refinement Factory object
+	RefinementFactory<SC,LO,GO,NO> refinementFactory( domainP1->getComm(), inputMeshP1_->volumeID_, parameterListAll_); // refinementRestriction_, refinement3DDiagonal_, restrictionLayer_); 
+
+	// Estimating the error with the Discretizations Mesh.
+	int currentLevel =0;
+	while(currentLevel < level){		
+		errorEstimator.tagFlag(inputMeshP1_,flag);
+		refinementFactory.refineMesh(inputMeshP1_,currentLevel, outputMesh, refinementMode_);
+
+		inputMeshP1_ = outputMesh;
+		currentLevel++;
+	}
+
+    domainRefined->setMesh(outputMesh);
+	
+	return domainRefined;
+
+}
+
 /*!
 \brief Identifying the problem with respect to the degrees of freedom and whether we calculate pressure. By telling how many blocks the MultiVector has, we can tell whether we calculate pressure or not. Depending on the numbers of entries within the solution vector, we can tell how many degreesOfFreedom (dofs) we have.
 
@@ -434,6 +473,7 @@ typename AdaptiveMeshRefinement<SC,LO,GO,NO>::DomainPtr_Type AdaptiveMeshRefinem
 			inputMeshP1_->surfaceTriangleElements_ = surfaceTriangleElements;
 		}
 	}
+
 	if(currentIter_ == 0 && dim_ == 2){
 		inputMeshP1_->assignEdgeFlags();
 		inputMeshP12_->assignEdgeFlags();
@@ -511,16 +551,22 @@ typename AdaptiveMeshRefinement<SC,LO,GO,NO>::DomainPtr_Type AdaptiveMeshRefinem
 	}
 
 	else if( currentIter_ < maxIter_ ){			
+			cout << " Hier 1" << endl;
+
 		// Estimating the error with the Discretizations Mesh.
 		errorElementsMv_ = errorEstimator.estimateError(inputMeshP12_, inputMeshP1_, solution, rhsFunc_, domainP12->getFEType());
+	cout << " Hier 2" << endl;
 
 		errorEstimationMv_.push_back(errorElementsMv_);
+	cout << " Hier 3" << endl;
 
 		errorEstimator.markElements(errorElementsMv_,theta_,markingStrategy_, inputMeshP1_);
+	cout << " Hier 4" << endl;
 
    		refinementFactory.refineMesh(inputMeshP1_,currentIter_, outputMesh, refinementMode_);
 	}
 
+	cout << " Hier 5" << endl;
 
 	// Export distribution of elements among processors
 	MultiVectorPtr_Type procNumTmp = Teuchos::rcp( new MultiVector_Type(domainP12->getElementMap() , 1 ) );

@@ -9,6 +9,7 @@
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include "feddlib/core/LinearAlgebra/BlockMatrix.hpp"
 #include "Domain.hpp"
+#include "Helper.hpp"
 #include "sms.hpp"
 #include "feddlib/core/AceFemAssembly/AssembleFE.hpp"
 #include "feddlib/core/AceFemAssembly/specific/AssembleFE_SCI_SMC_Active_Growth_Reorientation_decl.hpp"
@@ -471,6 +472,14 @@ class FE {
 								bool callFillComplete = true,
 								int FELocExternal=-1);
 
+    void assemblyLaplaceAssFE(int dim,
+                            string FEType,
+                            int degree,
+                            int dofs,
+                            BlockMatrixPtr_Type &A,
+                            bool callFillComplete,
+                            int FELocExternal=-1);
+
     void assemblyAceDeformDiffu(int dim,
 								string FETypeChem,
 								string FETypeSolid,
@@ -567,6 +576,8 @@ class FE {
                                     MultiVectorPtr_Type eModVec,
                                     bool callFillComplete = true,
                                     int FELocExternal=-1);
+                                    
+    void checkMeshOrientation(int dim,string FEType);
 
 
 /* ----------------------------------------------------------------------------------------*/
@@ -581,6 +592,9 @@ private:
 
     void addFeBlockMv(BlockMultiVectorPtr_Type &res, vec_dbl_ptr_Type rhsVec, FiniteElement elementBlock, int dofs);
 		
+    void computeSurfaceNormal(int dim,vec2D_dbl_ptr_Type pointsRep,vec_int_Type nodeList,vec_dbl_Type &v_E, double &norm_v_E);
+
+
 	AssembleFEPtr_vec_Type assemblyFEElements_;
 
 	vec2D_dbl_Type getCoordinates(vec_LO_Type localIDs, vec2D_dbl_ptr_Type points);
@@ -691,7 +705,7 @@ private:
     int checkFE(int Dimension,
                 std::string FEType);
 
-    UN determineDegree(UN dim,
+    /*UN determineDegree(UN dim,
                        std::string FEType1,
                        std::string FEType2,
                        VarType type1,
@@ -704,7 +718,7 @@ private:
 
     UN determineDegree(UN dim,
                        std::string FEType,
-                       UN degFunc);
+                       UN degFunc);*/
     
 
     bool setZeros_;

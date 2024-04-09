@@ -7,7 +7,8 @@
 #include "feddlib/core/General/DefaultTypeDefs.hpp"
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include "feddlib/core/FE/Elements.hpp"
-#include "feddlib/core/FE/Elements.hpp"
+#include "feddlib/core/FE/FiniteElement.hpp"
+#include "feddlib/core/FE/Helper.hpp"
 #include "feddlib/core/Mesh/AABBTree.hpp"
 
 /*!
@@ -25,6 +26,8 @@ class Mesh {
     
 public:
     typedef Elements Elements_Type;
+    typedef FiniteElement FiniteElement_Type;
+    typedef Teuchos::RCP<FiniteElement_Type> FiniteElementPtr_Type;
     typedef Teuchos::RCP<Elements_Type> ElementsPtr_Type;
     
     typedef Teuchos::RCP<Mesh> Mesh_ptr_Type;
@@ -122,7 +125,10 @@ public:
     tuple_intint_Type getRankRange() const {return rankRange_;};
     
     void deleteSurfaceElements(){ surfaceElements_.reset(); };
-    
+
+    void correctNormalDirections();
+
+    void correctElementOrientation();    
 
 	/*! 
 		\brief Returns elements as a vector type
@@ -174,6 +180,7 @@ public:
     /* ###################################################################### */
 private:
 
+    void flipSurface(FiniteElement_Type feSub);
 };
 }
 

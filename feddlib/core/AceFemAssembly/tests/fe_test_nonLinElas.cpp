@@ -3,7 +3,6 @@
 
 #include "feddlib/core/FE/Domain.hpp"
 #include "feddlib/core/FE/FE.hpp"
-#include "feddlib/core/AceFemAssembly/TestFE/FE_Test.hpp"
 #include "feddlib/core/General/ExporterParaView.hpp"
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include <Teuchos_GlobalMPISession.hpp>
@@ -39,6 +38,12 @@ int main(int argc, char *argv[]) {
  	typedef MultiVector<SC,LO,GO,NO> MultiVector_Type;
     typedef RCP<MultiVector_Type> MultiVectorPtr_Type;
     typedef RCP<const MultiVector_Type> MultiVectorConstPtr_Type;
+    
+ 	typedef BlockMultiVector<SC,LO,GO,NO> BlockMultiVector_Type;
+    typedef RCP<BlockMultiVector_Type> BlockMultiVectorPtr_Type;
+
+    typedef BlockMatrix<SC,LO,GO,NO> BlockMatrix_Type;
+    typedef Teuchos::RCP<BlockMatrix_Type> BlockMatrixPtr_Type;
 
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -113,7 +118,6 @@ int main(int argc, char *argv[]) {
 	d_rep->putScalar(solConst);
     MatrixPtr_Type A= Teuchos::rcp(new Matrix_Type( domain->getMapVecFieldUnique(), domain->getDimension() * domain->getApproxEntriesPerRow()  ) ); // Jacobi Matrix
     MultiVectorPtr_Type f = Teuchos::rcp( new MultiVector_Type( domain->getMapVecFieldRepeated(), 1 ) ); // RHS vector
-    cout << " FEDDLib Implementation .... " << endl;
     {
         //fe.assemblyElasticityJacobianAndStressAceFEM(dim, domain->getFEType(), A, f, d_rep, params, 1);
         fe.assemblyElasticityJacobianAceFEM(dim, domain->getFEType(), A,d_rep, "Neo-Hooke",youngModulus,poissonRatio,1.,true);
@@ -121,23 +125,22 @@ int main(int argc, char *argv[]) {
                                                   
 
     }
-    cout << " ... done " << endl;
     //A->print();
 	// Class for assembling linear Elasticity via Acefem implementation
- 	FE_Test<SC,LO,GO,NO> fe_test;
+ 	FE<SC,LO,GO,NO> fe_test;
     fe_test.addFE(domain);
     
     MatrixPtr_Type A_test= Teuchos::rcp(new Matrix_Type( domain->getMapVecFieldUnique(),domain->getDimension() * domain->getApproxEntriesPerRow()   ) );
     MultiVectorPtr_Type f_test = Teuchos::rcp( new MultiVector_Type( domain->getMapVecFieldRepeated(), 1 ) ); // RHS vector
-    
-    cout << " ACEGen Implementation .... " << endl;
+   	BlockMultiVectorPtr_Type resVec = Teuchos::rcp( new BlockMultiVector_Type( 1 ) ); // RHS vector
+   	resVec->addBlock(f_test,0);
+    BlockMatrixPtr_Type system = Teuchos::rcp( new BlockMatrix_Type( 1 ) ); // 
+    system->addBlock(A_test,0,0);
 
     {
-        fe_test.assemblyNonLinElas(dim, FEType, 2,dofs,d_rep, A_test,f_test,params,false,"Jacobian",true);
-        fe_test.assemblyNonLinElas(dim, FEType, 2,dofs,d_rep, A_test,f_test,params,false,"Rhs",true);
+        fe_test.assemblyNonLinearElasticity(dim, FEType, 2,dofs,d_rep, system,resVec,params,true);
         
     }
-    cout << " ... done " << endl;
 
 	//A_test->print();
 

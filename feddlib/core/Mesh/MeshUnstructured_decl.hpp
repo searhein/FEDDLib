@@ -8,7 +8,7 @@
 #include "feddlib/core/FE/EdgeElements.hpp"
 #include "feddlib/core/LinearAlgebra/BlockMatrix.hpp"
 #include "feddlib/core/FE/TriangleElements.hpp"
-
+#include "feddlib/core/General/ExporterParaView.hpp"
 /*!
  Declaration of MeshUnstructured
  
@@ -33,6 +33,7 @@ class MeshUnstructured : public Mesh<SC,LO,GO,NO> {
 public:
     typedef Mesh<SC,LO,GO,NO> Mesh_Type;
     typedef Teuchos::RCP<MeshUnstructured<SC,LO,GO,NO> > MeshUnstrPtr_Type;
+    typedef Teuchos::RCP<Mesh_Type> MeshPtr_Type;
 
     typedef std::vector<MeshUnstrPtr_Type> MeshUnstrPtrArray_Type;
 
@@ -233,6 +234,31 @@ public:
 		\brief Building an edgemap from scratch when edges are already distributed parallel
 	*/
 	void buildEdgeMap();
+
+	/*! 
+		\brief Exporting Mesh as .mesh file. For most detailed export we also write surfaces and edges. This can be useful/necessary
+		@param[in] meshName for export
+		@param[in] exportEdges wether to export edges or not
+		@param[in] exportSurfaces whether to export surfaces or not
+
+	*/
+	void exportMesh(MapConstPtr_Type mapUnique, MapConstPtr_Type mapRep, bool exportEdges=false, bool exportSurface=false ,string meshName="export.mesh");
+
+	/*!
+	
+	
+	
+	
+	*/
+	void exportNodeFlags();
+	
+	/*!
+	
+	
+	
+	
+	*/
+	void exportElementFlags();
 
     /* ###################################################################### */
     

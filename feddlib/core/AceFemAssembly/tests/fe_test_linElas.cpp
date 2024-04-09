@@ -3,7 +3,6 @@
 
 #include "feddlib/core/FE/Domain.hpp"
 #include "feddlib/core/FE/FE.hpp"
-#include "feddlib/core/AceFemAssembly/TestFE/FE_Test.hpp"
 #include "feddlib/core/General/ExporterParaView.hpp"
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include <Teuchos_GlobalMPISession.hpp>
@@ -39,6 +38,13 @@ int main(int argc, char *argv[]) {
  	typedef MultiVector<SC,LO,GO,NO> MultiVector_Type;
     typedef RCP<MultiVector_Type> MultiVectorPtr_Type;
     typedef RCP<const MultiVector_Type> MultiVectorConstPtr_Type;
+    
+    
+ 	typedef BlockMultiVector<SC,LO,GO,NO> BlockMultiVector_Type;
+    typedef RCP<BlockMultiVector_Type> BlockMultiVectorPtr_Type;
+
+    typedef BlockMatrix<SC,LO,GO,NO> BlockMatrix_Type;
+    typedef Teuchos::RCP<BlockMatrix_Type> BlockMatrixPtr_Type;
 
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -115,15 +121,22 @@ int main(int argc, char *argv[]) {
     }
     A->writeMM("A");
 	// Class for assembling linear Elasticity via Acefem implementation
- 	FE_Test<SC,LO,GO,NO> fe_test;
+ 	FE<SC,LO,GO,NO> fe_test;
     fe_test.addFE(domain);
     
     MatrixPtr_Type A_test= Teuchos::rcp(new Matrix_Type( domain->getMapVecFieldUnique(),domain->getDimension() * domain->getApproxEntriesPerRow()   ) );
-
+     BlockMatrixPtr_Type system = Teuchos::rcp( new BlockMatrix_Type( 1 ) ); //
+	system->addBlock(A_test,0,0);
+    MultiVectorPtr_Type d_rep = Teuchos::rcp(new MultiVector_Type(domain->getMapVecFieldRepeated(),1));
+	d_rep->putScalar(0.);
+    BlockMultiVectorPtr_Type resVec = Teuchos::rcp( new BlockMultiVector_Type( 2 ) ); // RHS vector
+    MultiVectorPtr_Type d_res = Teuchos::rcp( new MultiVector_Type( domain->getMapVecFieldUnique(), 1 ) ); // d_vec
+    resVec->addBlock(d_res,0);
     {
-        fe_test.assemblyLinElas(dim, FEType, 2,dofs, A_test, true/*call fillComplete*/);
+        fe_test.assemblyLinearElasticity(dim, FEType, 2,dofs, d_rep, system, resVec, params,true, " ",true/*call fillComplete*/);
     }
-	A_test->writeMM("A_ACE");
+	//A_test->writeMM("A_ACE");
+
 
     // Comparing matrices
 	MatrixPtr_Type Sum= Teuchos::rcp(new Matrix_Type( domain->getMapVecFieldUnique(), domain->getDimension() * domain->getApproxEntriesPerRow()  ) );

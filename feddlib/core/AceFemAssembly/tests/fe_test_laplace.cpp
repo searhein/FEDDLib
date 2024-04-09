@@ -3,7 +3,6 @@
 
 #include "feddlib/core/FE/Domain.hpp"
 #include "feddlib/core/FE/FE.hpp"
-#include "feddlib/core/AceFemAssembly/TestFE/FE_Test.hpp"
 #include "feddlib/core/General/ExporterParaView.hpp"
 #include "feddlib/core/LinearAlgebra/MultiVector.hpp"
 #include <Teuchos_GlobalMPISession.hpp>
@@ -39,6 +38,9 @@ int main(int argc, char *argv[]) {
  	typedef MultiVector<SC,LO,GO,NO> MultiVector_Type;
     typedef RCP<MultiVector_Type> MultiVectorPtr_Type;
     typedef RCP<const MultiVector_Type> MultiVectorConstPtr_Type;
+
+    typedef BlockMatrix<SC,LO,GO,NO> BlockMatrix_Type;  
+    typedef Teuchos::RCP<BlockMatrix_Type> BlockMatrixPtr_Type;
 
     oblackholestream blackhole;
     GlobalMPISession mpiSession(&argc,&argv,&blackhole);
@@ -115,18 +117,19 @@ int main(int argc, char *argv[]) {
 
     }
     
- 	FE_Test<SC,LO,GO,NO> fe_test;
+ 	FE<SC,LO,GO,NO> fe_test;
     fe_test.addFE(domain);
     
-    MatrixPtr_Type A_test= Teuchos::rcp(new Matrix_Type(domain->getMapUnique(), 30  ) ); // with approx entries per row
-
+    MatrixPtr_Type A_test= Teuchos::rcp(new Matrix_Type( domain->getMapUnique(),domain->getDimension() * domain->getApproxEntriesPerRow()   ) );
+    BlockMatrixPtr_Type system = Teuchos::rcp( new BlockMatrix_Type( 2 ) ); // 
+    
 	if(dofs == dim)
 		A_test.reset(new Matrix_Type( domain->getMapVecFieldUnique(), 30  ) );
-
+		
+	system->addBlock(A_test,0,0);
     {
-        fe_test.assemblyLaplace(dim, FEType, 2,dofs, A_test, true/*call fillComplete*/);
+        fe_test.assemblyLaplaceAssFE(dim, FEType, 2,dofs, system, true/*call fillComplete*/);
     }
-
    
 	MatrixPtr_Type Sum= Teuchos::rcp(new Matrix_Type(domain->getMapUnique(), 30  ) ); // with approx entries per row
 	if(dofs == dim)
