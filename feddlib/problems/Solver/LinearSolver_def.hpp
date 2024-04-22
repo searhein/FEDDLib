@@ -75,7 +75,6 @@ int LinearSolver<SC,LO,GO,NO>::solveMonolithic(Problem_Type* problem, BlockMulti
     if (problem->getParameterList()->get("Zero Initial Guess",true)) {
         problem->getSolution()->putScalar(0.);
     }
-    
     Teuchos::RCP<Thyra::MultiVectorBase<SC> >thyraX = problem->getSolution()->getThyraMultiVector();
 
     Teuchos::RCP<const Thyra::MultiVectorBase<SC> > thyraB;

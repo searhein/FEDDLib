@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     string filename = "fluidBenchmark2.mesh";
     myCLP.setOption("file",&filename,"Mesh filename");
     string exportfilename = "export.mesh";
-    myCLP.setOption("fileExport",&exportfilename,"Export Mesh filename");
+    myCLP.setOption("ExportName",&exportfilename,"Export Mesh filename");
     int dim = 3;
     myCLP.setOption("dim",&dim,"Dimension");
     string delimiter = " ";
@@ -78,8 +78,6 @@ int main(int argc, char *argv[]) {
     bool boolExportMesh = true;
     bool boolExportSubdomains = false;
     int volumeID = 10;
-    if (filename=="some_tetrahedron.mesh")
-        volumeID = 12;
 
     DomainPtr_Type domainP1;
     DomainPtr_Type domainP2;
@@ -97,9 +95,6 @@ int main(int argc, char *argv[]) {
     
     partitionerP1.readAndPartition(volumeID);
 
-    domainP1->preProcessMesh(true,true);
-
-
     if (FEType == "P2") {
         domainP2->buildP2ofP1Domain( domainP1 );
         domain = domainP2;
@@ -107,8 +102,16 @@ int main(int argc, char *argv[]) {
     else
         domain = domainP1;
 
-	
-    //domain->exportNodeFlags();
+    // Via the domain and the underlying mesh we can do a preprocessing step to ensure consistent normal directions and element orientation
+    domain->preProcessMesh(true,true);
+	// We do a second step to see if there we read only outward normals and positive dets.
+    domain->preProcessMesh(true,true);
+
+    // Export functions for surface normals and element orientation. 
+    if(dim==2){
+        domain->exportSurfaceNormals("domain");
+        domain->exportElementOrientation("domain");
+    }
 
     return(EXIT_SUCCESS);
 }
