@@ -86,6 +86,9 @@ class FE {
 	typedef AssembleFENavierStokes<SC,LO,GO,NO> AssembleFENavierStokes_Type;
     typedef Teuchos::RCP<AssembleFENavierStokes_Type> AssembleFENavierStokesPtr_Type;
 
+    typedef AssembleFEGeneralizedNewtonian<SC,LO,GO,NO> AssembleFEGeneralizedNewtonian_Type;
+    typedef Teuchos::RCP<AssembleFEGeneralizedNewtonian_Type> AssembleFEGeneralizedNewtonianPtr_Type;
+
     typedef AssembleFE_SCI_SMC_Active_Growth_Reorientation<SC,LO,GO,NO> AssembleFE_SCI_SMC_Active_Growth_Reorientation_Type;
     typedef Teuchos::RCP<AssembleFE_SCI_SMC_Active_Growth_Reorientation_Type> AssembleFE_SCI_SMC_Active_Growth_Reorientation_Ptr_Type;
 

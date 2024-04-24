@@ -1176,12 +1176,22 @@ void FE<SC,LO,GO,NO>::assemblyNavierStokes(int dim,
 				addFeBlockMatrix(A, elementMatrix, elements->getElement(T), elementsPres->getElement(T), mapVel, mapPres, problemDisk);
 		}
    		if(assembleMode == "FixedPoint"){
-
-            AssembleFENavierStokesPtr_Type elTmp = Teuchos::rcp_dynamic_cast<AssembleFENavierStokes_Type>(assemblyFEElements_[T] );
             
-            elTmp->assembleFixedPoint();
-		    
-            elementMatrix = elTmp->getFixedPointMatrix(); 
+            //AssembleFENavierStokesPtr_Type elTmp = Teuchos::rcp_dynamic_cast<AssembleFENavierStokes_Type>(assemblyFEElements_[T] ); // Why should we need a pointer we can directly call it using assemblyFEElements_[T]? Because assemblyFixedPoint is not a function of base class
+
+            if(params->sublist("Material").get("Newtonian",true) == false)
+            {
+                AssembleFEGeneralizedNewtonianPtr_Type elTmp = Teuchos::rcp_dynamic_cast<AssembleFEGeneralizedNewtonian_Type>( assemblyFEElements_[T] );
+                elTmp->assembleFixedPoint();
+                elementMatrix =  elTmp->getFixedPointMatrix(); 
+            }
+            else // Newtonian Case
+            {
+              AssembleFENavierStokesPtr_Type elTmp = Teuchos::rcp_dynamic_cast<AssembleFENavierStokes_Type>( assemblyFEElements_[T] );
+              elTmp->assembleFixedPoint();
+              elementMatrix =  elTmp->getFixedPointMatrix(); 
+            }
+            
 
 			assemblyFEElements_[T]->advanceNewtonStep(); // n genereal non linear solver step
 

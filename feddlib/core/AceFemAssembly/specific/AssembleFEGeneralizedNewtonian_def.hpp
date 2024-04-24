@@ -136,6 +136,43 @@ namespace FEDD
         */
     }
 
+
+
+    template <class SC, class LO, class GO, class NO>
+    void AssembleFEGeneralizedNewtonian<SC,LO,GO,NO>::assembleFixedPoint() {
+
+        SmallMatrixPtr_Type elementMatrixN = Teuchos::rcp(new SmallMatrix_Type(this->dofsElementVelocity_ + this->numNodesPressure_));
+        SmallMatrixPtr_Type elementMatrixNC = Teuchos::rcp(new SmallMatrix_Type(this->dofsElementVelocity_ + this->numNodesPressure_));
+
+	    if(this->newtonStep_ ==0){
+            SmallMatrixPtr_Type elementMatrixB = Teuchos::rcp(new SmallMatrix_Type(this->dofsElementVelocity_ + this->numNodesPressure_));
+
+            this->constantMatrix_.reset(new SmallMatrix_Type(this->dofsElementVelocity_ + this->numNodesPressure_));
+            // Construct the matrix B from FE formulation - as it is equivalent to Newtonian case we call the same function
+            this->assemblyDivAndDivT(elementMatrixB); // For Matrix B
+            elementMatrixB->scale(-1.);
+            this->constantMatrix_->add((*elementMatrixB), (*this->constantMatrix_));
+        }
+
+        this->ANB_.reset(new SmallMatrix_Type(this->dofsElementVelocity_ + this->numNodesPressure_)); // A + B + N
+        this->ANB_->add(((*this->constantMatrix_)), ((*this->ANB_)));
+
+        // Nonlinear advection term \rho (u \cdot \nabla) u
+        // As this class is derived from NavierStokes class we can call already implemented function
+        //*************** ADVECTION************************
+        this->assemblyAdvection(elementMatrixNC);
+        elementMatrixNC->scale(this->density_);
+        this->ANB_->add((*elementMatrixNC), ((*this->ANB_)));
+
+        // For a generalized-newtonian fluid we add additional element matrix and fill it with specific contribution
+        // Remember that this term is based on the stress-divergence formulation of the momentum equation
+        // \nabla \dot \tau with \tau=\eta(\gammaDot)(\nabla u + (\nabla u)^T)
+        //*************** STRESS TENSOR************************
+        this->assemblyStress(elementMatrixN);
+        this->ANB_->add((*elementMatrixN), ((*this->ANB_)));
+
+}
+
     // Extra stress term resulting from chosen non-newtonian constitutive model  - Compute element matrix entries
     template <class SC, class LO, class GO, class NO>
     void AssembleFEGeneralizedNewtonian<SC, LO, GO, NO>::assemblyStress(SmallMatrixPtr_Type &elementMatrix)

@@ -59,6 +59,13 @@ namespace FEDD
 		*/
 		void computeLocalconstOutputField() override;
 
+		/*
+			\brief Assembly of FixedPoint- Matrix (System Matrix K with current u) 
+	     */
+	    void assembleFixedPoint();
+
+	   SmallMatrixPtr_Type getFixedPointMatrix(){return this->ANB_;};
+
 	protected:
 		std::string shearThinningModel;
 		int dofsElementViscosity_;
